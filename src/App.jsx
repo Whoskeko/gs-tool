@@ -1,18 +1,42 @@
 import { useState } from "react";
-import { ChakraProvider, Box, Button, Input, Table, Thead, Tbody, Tr, Th, Td, useColorMode, extendTheme, Textarea, IconButton, Image, Flex } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  Box,
+  Button,
+  Input,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  useColorMode,
+  extendTheme,
+  Textarea,
+  IconButton,
+  Image,
+  Flex,
+} from "@chakra-ui/react";
 import { CSVLink } from "react-csv";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import logo from "./assets/gst-logo.svg";
 
 function evaluateXPath(xpath, html) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const result = [];
-            const nodes = doc.evaluate(xpath, doc, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (let i = 0; i < nodes.snapshotLength; i++) {
-                result.push(nodes.snapshotItem(i).textContent);
-            }
-            return result.join(', '); // Join multiple values with a comma
-        }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const result = [];
+  const nodes = doc.evaluate(
+    xpath,
+    doc,
+    null,
+    XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+    null,
+  );
+  for (let i = 0; i < nodes.snapshotLength; i++) {
+    result.push(nodes.snapshotItem(i).textContent);
+  }
+  return result.join(", "); // Join multiple values with a comma
+}
 
 const fetchHTML = async (url) => {
   try {
@@ -47,8 +71,10 @@ const extractMetaData = async (url) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
-  const geoPlaceName = doc.querySelector("meta[name='geo.placename']")?.content || "N/A";
-  const geoRegion = doc.querySelector("meta[name='geo.region']")?.content || "N/A";
+  const geoPlaceName =
+    doc.querySelector("meta[name='geo.placename']")?.content || "N/A";
+  const geoRegion =
+    doc.querySelector("meta[name='geo.region']")?.content || "N/A";
 
   const speakableData = [];
   doc.querySelectorAll("script[type='application/ld+json']").forEach((elem) => {
@@ -63,7 +89,7 @@ const extractMetaData = async (url) => {
               speakableData.push({
                 Type: item.speakable["@type"] || "Unknown Type",
                 XPath: xpath,
-                Value: value
+                Value: value,
               });
             });
           }
@@ -74,7 +100,12 @@ const extractMetaData = async (url) => {
     }
   });
 
-  return { URL: url, GeoPlaceName: geoPlaceName, GeoRegion: geoRegion, Speakable: speakableData };
+  return {
+    URL: url,
+    GeoPlaceName: geoPlaceName,
+    GeoRegion: geoRegion,
+    Speakable: speakableData,
+  };
 };
 
 const App = () => {
@@ -83,7 +114,10 @@ const App = () => {
   const [data, setData] = useState([]);
 
   const handleExtract = async () => {
-    const urlList = urls.split("\n").map((url) => url.trim()).filter((url) => url);
+    const urlList = urls
+      .split("\n")
+      .map((url) => url.trim())
+      .filter((url) => url);
     const extractedData = await Promise.all(urlList.map(extractMetaData));
     setData(extractedData.filter(Boolean));
   };
@@ -92,19 +126,30 @@ const App = () => {
     URL: item.URL,
     GeoPlaceName: item.GeoPlaceName,
     GeoRegion: item.GeoRegion,
-    Speakable: item.Speakable.length > 0 ? item.Speakable.map(s => `Type: ${s.Type}, XPath: ${s.XPath}, Value: ${s.Value}`).join(" | ") : "No Speakable Data"
+    Speakable:
+      item.Speakable.length > 0
+        ? item.Speakable.map(
+            (s) => `Type: ${s.Type}, XPath: ${s.XPath}, Value: ${s.Value}`,
+          ).join(" | ")
+        : "No Speakable Data",
   }));
 
   return (
     <ChakraProvider theme={theme}>
-      <Box 
-        p={4} 
-        bg={colorMode === "dark" ? "gray.900" : "white"} 
+      <Box
+        p={4}
+        bg={colorMode === "dark" ? "gray.900" : "white"}
         color={colorMode === "dark" ? "white" : "black"}
         minHeight="100vh"
       >
         <Flex justifyContent="space-between" alignItems="center" mb={4}>
-          <Image src="/gst-logo.svg" ml="5" alt="GST Logo" boxSize="100px" filter={colorMode === "dark" ? "invert(1)" : "none"} />
+          <Image
+            src={logo}
+            ml="5"
+            alt="gst logo"
+            boxSize="100px"
+            filter={colorMode === "dark" ? "invert(1)" : "none"}
+          />
           <IconButton
             onClick={toggleColorMode}
             icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
@@ -115,14 +160,19 @@ const App = () => {
           />
         </Flex>
 
-        <Textarea placeholder="Ingrese URLs, una por línea" value={urls} onChange={(e) => setUrls(e.target.value)} mb={4} />
+        <Textarea
+          placeholder="Ingrese URLs, una por línea"
+          value={urls}
+          onChange={(e) => setUrls(e.target.value)}
+          mb={4}
+        />
         <Button
-            onClick={handleExtract}
-            mb={4}
-            mr={2}
-            colorScheme={colorMode === "light" ? "yellow" : "blue"}
+          onClick={handleExtract}
+          mb={4}
+          mr={2}
+          colorScheme={colorMode === "light" ? "yellow" : "blue"}
         >
-            Extraer Datos
+          Extraer Datos
         </Button>
         <CSVLink data={csvData} filename="extracted_data.csv">
           <Button
@@ -136,7 +186,7 @@ const App = () => {
         <Box overflowX="auto">
           <Table>
             <Thead>
-              <Tr> 
+              <Tr>
                 <Th>URL</Th>
                 <Th>GeoPlaceName</Th>
                 <Th>GeoRegion</Th>
@@ -150,17 +200,15 @@ const App = () => {
                   <Td>{item.GeoPlaceName}</Td>
                   <Td>{item.GeoRegion}</Td>
                   <Td>
-                    {item.Speakable.length > 0 ? (
-                      item.Speakable.map((s, i) => (
-                        <Box key={i} mb={2}>
-                          <b>Type:</b> {s.Type} <br />
-                          <b>XPath:</b> {s.XPath} <br />
-                          <b>Value:</b> {s.Value}
-                        </Box>
-                      ))
-                    ) : (
-                      "No Speakable Data"
-                    )}
+                    {item.Speakable.length > 0
+                      ? item.Speakable.map((s, i) => (
+                          <Box key={i} mb={2}>
+                            <b>Type:</b> {s.Type} <br />
+                            <b>XPath:</b> {s.XPath} <br />
+                            <b>Value:</b> {s.Value}
+                          </Box>
+                        ))
+                      : "No Speakable Data"}
                   </Td>
                 </Tr>
               ))}
@@ -173,4 +221,3 @@ const App = () => {
 };
 
 export default App;
-
