@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChakraProvider,
   Box,
@@ -137,6 +137,15 @@ const App = () => {
           ).join(" | ")
         : "No Speakable Data",
   }));
+
+  useEffect(() => {
+    const savedUrls = localStorage.getItem("urls");
+    if (savedUrls) setUrls(savedUrls);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("urls", urls);
+  }, [urls]);
 
   return (
     <ChakraProvider theme={theme}>
