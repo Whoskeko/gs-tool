@@ -16,12 +16,32 @@ import {
   IconButton,
   Image,
   Flex,
+  Text,
 } from "@chakra-ui/react";
 import { CSVLink } from "react-csv";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import logo from "./assets/gst-logo.svg";
 
-function evaluateXPath(xpath, html) {
+const isValidURL = (url) => {
+  // Expresión regular para validar si la URL es correcta
+  const regex =
+    /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z0-9]{2,3}(:\d+)?(\/[^\s]*)?$/i;
+  return regex.test(url);
+};
+
+const fetchHTML = async (url) => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok)
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    return await response.text();
+  } catch (error) {
+    console.error(`Error obteniendo HTML de ${url}:`, error);
+    return null;
+  }
+};
+
+const evaluateXPath = (xpath, html) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   const result = [];
@@ -36,33 +56,7 @@ function evaluateXPath(xpath, html) {
     result.push(nodes.snapshotItem(i).textContent);
   }
   return result.join(", "); // Join multiple values with a comma
-}
-
-const fetchHTML = async (url) => {
-  try {
-    const response = await fetch(url);
-    return await response.text();
-  } catch (error) {
-    console.error(`Error fetching ${url}:`, error);
-    return null;
-  }
 };
-
-const theme = extendTheme({
-  config: {
-    initialColorMode: "system",
-    useSystemColorMode: true,
-  },
-  styles: {
-    global: (props) => ({
-      "html, body": {
-        color: props.colorMode === "dark" ? "white" : "black",
-        bg: props.colorMode === "dark" ? "gray.900" : "white",
-        transition: "background-color 0.3s ease-in-out, color 0.3s ease-in-out",
-      },
-    }),
-  },
-});
 
 const extractMetaData = async (url) => {
   const html = await fetchHTML(url);
@@ -112,17 +106,67 @@ const App = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const [urls, setUrls] = useState("");
   const [data, setData] = useState([]);
-
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [errors, setErrors] = useState([]);
 
+  const normalizeURL = (url) => {
+    // Si la URL no contiene http:// o https://, agregamos https:// por defecto
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+    }
+
+    // Si la URL contiene el dominio sin www, pero debe tenerlo, lo añadimos
+    if (!/^www\./i.test(url) && /purina.com.ar/i.test(url)) {
+      url = url.replace(/^https?:\/\//, "https://www."); // Añadimos www si es purina
+    }
+
+    return url;
+  };
+
+  // Uso en el código
   const handleExtract = async () => {
     setIsLoading(true);
+    setError(""); // Limpiar error previo
+
     const urlList = urls
       .split("\n")
       .map((url) => url.trim())
       .filter((url) => url);
-    const extractedData = await Promise.all(urlList.map(extractMetaData));
-    setData(extractedData.filter(Boolean));
+
+    // Verificamos si alguna URL es inválida antes de continuar
+    const invalidUrls = urlList.filter((url) => !isValidURL(url));
+
+    if (invalidUrls.length > 0) {
+      setError(`Estas URLs no son válidas: ${invalidUrls.join(", ")}`);
+      setIsLoading(false);
+      return;
+    }
+
+    // Normalizamos las URLs antes de extraer datos
+    const normalizedUrls = urlList.map(normalizeURL);
+
+    const extractedData = await Promise.all(
+      normalizedUrls.map(async (url) => {
+        try {
+          const result = await extractMetaData(url);
+          if (!result) throw new Error(`No se pudo obtener datos de ${url}`);
+          return result;
+        } catch (err) {
+          return {
+            URL: url,
+            error: "Error al procesar esta URL: " + err.message,
+          };
+        }
+      }),
+    );
+
+    // Filtramos las respuestas
+    const successfulData = extractedData.filter((item) => !item.error);
+    const errorData = extractedData.filter((item) => item.error);
+
+    setData(successfulData);
+    setErrors(errorData);
     setIsLoading(false);
   };
 
@@ -148,7 +192,9 @@ const App = () => {
   }, [urls]);
 
   return (
-    <ChakraProvider theme={theme}>
+    <ChakraProvider
+      theme={extendTheme({ config: { initialColorMode: "system" } })}
+    >
       <Box
         p={4}
         bg={colorMode === "dark" ? "gray.900" : "white"}
@@ -172,7 +218,8 @@ const App = () => {
             colorScheme={colorMode === "light" ? "yellow" : "blue"}
           />
         </Flex>
-
+        {error && <Text color="red.500">{error}</Text>}{" "}
+        {/* Mostramos el error si existe */}
         <Textarea
           placeholder="Ingrese URLs, una por línea"
           value={urls}
@@ -197,7 +244,7 @@ const App = () => {
             Descargar CSV
           </Button>
         </CSVLink>
-
+        {/* Mostrar la tabla con los datos extraídos */}
         <Box overflowX="auto" maxWidth="100%">
           <Table size="sm">
             <Thead>

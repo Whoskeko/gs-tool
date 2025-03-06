@@ -1,6 +1,6 @@
 {
   "name": "geo-schema-tool",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "author": "Hugo Peralta <hugoperalta.job@gmail.com>",
   "license": "Proprietary",
   "private": true,
