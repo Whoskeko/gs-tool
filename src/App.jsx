@@ -113,13 +113,17 @@ const App = () => {
   const [urls, setUrls] = useState("");
   const [data, setData] = useState([]);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleExtract = async () => {
+    setIsLoading(true);
     const urlList = urls
       .split("\n")
       .map((url) => url.trim())
       .filter((url) => url);
     const extractedData = await Promise.all(urlList.map(extractMetaData));
     setData(extractedData.filter(Boolean));
+    setIsLoading(false);
   };
 
   const csvData = data.map((item) => ({
@@ -169,6 +173,7 @@ const App = () => {
         />
         <Button
           onClick={handleExtract}
+          isLoading={isLoading}
           mb={4}
           mr={2}
           colorScheme={colorMode === "light" ? "yellow" : "blue"}
