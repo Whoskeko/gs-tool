@@ -104,7 +104,7 @@ const App = () => {
         minHeight="100vh"
       >
         <Flex justifyContent="space-between" alignItems="center" mb={4}>
-          <Image src="/GST Logo.svg" ml="5" alt="GST Logo" boxSize="100px" filter={colorMode === "dark" ? "invert(1)" : "none"} />
+          <Image src="/gst-logo.svg" ml="5" alt="GST Logo" boxSize="100px" filter={colorMode === "dark" ? "invert(1)" : "none"} />
           <IconButton
             onClick={toggleColorMode}
             icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
