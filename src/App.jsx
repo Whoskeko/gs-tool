@@ -165,6 +165,7 @@ const App = () => {
           value={urls}
           onChange={(e) => setUrls(e.target.value)}
           mb={4}
+          resize="vertical"
         />
         <Button
           onClick={handleExtract}
@@ -183,8 +184,8 @@ const App = () => {
           </Button>
         </CSVLink>
 
-        <Box overflowX="auto">
-          <Table>
+        <Box overflowX="auto" maxWidth="100%">
+          <Table size="sm">
             <Thead>
               <Tr>
                 <Th>URL</Th>
