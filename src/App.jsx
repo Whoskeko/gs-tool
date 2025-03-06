@@ -116,9 +116,12 @@ const App = () => {
       url = `https://${url}`;
     }
 
-    // Si la URL contiene el dominio sin www, pero debe tenerlo, lo añadimos
-    if (!/^www\./i.test(url) && /purina.com.ar/i.test(url)) {
-      url = url.replace(/^https?:\/\//, "https://www."); // Añadimos www si es purina
+    // Si la URL contiene purina.com pero no tiene www, le agregamos www.
+    if (
+      /purina\.com/i.test(url) &&
+      !/^www\./i.test(url.replace(/^https?:\/\//, ""))
+    ) {
+      url = url.replace(/^https?:\/\//, "https://www."); // Añadimos www si tiene purina.com en el dominio y no tiene www
     }
 
     return url;
