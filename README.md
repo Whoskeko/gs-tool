@@ -96,10 +96,4 @@ Cuando el usuario ingresa una lista de URLs, estas son procesadas de la siguient
 
 ---
 
-## Conclusiones
-
-Este proyecto ofrece una forma sencilla y eficiente de extraer meta información relevante de diversas páginas web. La validación de URLs, la extracción de datos y el manejo adecuado de errores contribuyen a una experiencia de usuario fluida y robusta.
-
----
-
-¡Si tienes alguna pregunta o necesitas ayuda adicional, no dudes en contactarnos!
+¡Si tienes alguna pregunta o necesitas ayuda adicional, no dudes en contactarme!
