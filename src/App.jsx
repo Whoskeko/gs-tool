@@ -65,6 +65,16 @@ const extractMetaData = async (url) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
+  // Determinar el tipo de página con prioridad
+  let pageType = "N/A";
+  if (doc.querySelector('section.internal-products')) {
+    pageType = "PRO";
+  } else if (doc.querySelector('div.container.article-internal')) {
+    pageType = "ART";
+  } else if (doc.querySelector("article")) {
+    pageType = "COP";
+  }
+
   const geoPlaceName =
     doc.querySelector("meta[name='geo.placename']")?.content || "N/A";
   const geoRegion =
@@ -95,6 +105,7 @@ const extractMetaData = async (url) => {
   });
 
   return {
+    PageType: pageType,
     URL: url,
     GeoPlaceName: geoPlaceName,
     GeoRegion: geoRegion,
@@ -174,6 +185,7 @@ const App = () => {
   };
 
   const csvData = data.map((item) => ({
+    PageType: item.PageType,
     URL: item.URL,
     GeoPlaceName: item.GeoPlaceName,
     GeoRegion: item.GeoRegion,
@@ -252,6 +264,7 @@ const App = () => {
           <Table size="sm">
             <Thead>
               <Tr>
+                <Th>Type</Th>
                 <Th>URL</Th>
                 <Th>GeoPlaceName</Th>
                 <Th>GeoRegion</Th>
@@ -261,6 +274,7 @@ const App = () => {
             <Tbody>
               {data.map((item, index) => (
                 <Tr key={index}>
+                  <Td>{item.PageType}</Td>
                   <Td>{item.URL}</Td>
                   <Td>{item.GeoPlaceName}</Td>
                   <Td>{item.GeoRegion}</Td>
