@@ -19,7 +19,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { CSVLink } from "react-csv";
-import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import { MoonIcon, SunIcon, DeleteIcon, DownloadIcon } from "@chakra-ui/icons";
 import logo from "./assets/gst-logo.svg";
 
 const isValidURL = (url) => {
@@ -184,6 +184,21 @@ const App = () => {
     setIsLoading(false);
   };
 
+  const handleClearText = () => {
+    setUrls('');
+    setError('');
+  };
+
+  const handleClear = () => {
+    setUrls('');
+    setData([]);
+    setError('');
+  };
+
+  const getLinkCount = () => {
+    return urls.split('\n').filter(url => url.trim()).length;
+  };
+
   const csvData = data.map((item) => ({
     PageType: item.PageType,
     URL: item.URL,
@@ -242,23 +257,49 @@ const App = () => {
           mb={4}
           resize="vertical"
         />
-        <Button
-          onClick={handleExtract}
-          isLoading={isLoading}
-          mb={4}
-          mr={2}
-          colorScheme={colorMode === "light" ? "yellow" : "blue"}
-        >
-          Extraer Datos
-        </Button>
-        <CSVLink data={csvData} filename="extracted_data.csv">
-          <Button
-            mb={4}
-            colorScheme={colorMode === "light" ? "yellow" : "blue"}
-          >
-            Descargar CSV
-          </Button>
-        </CSVLink>
+        <Flex justifyContent="space-between" alignItems="center" mb={4}>
+          <Box>
+            <Button
+              onClick={handleExtract}
+              isLoading={isLoading}
+              mr={2}
+              colorScheme={colorMode === "light" ? "yellow" : "blue"}
+            >
+              Extraer Datos
+            </Button>
+            <Button
+              onClick={handleClearText}
+              mr={2}
+              colorScheme={colorMode === "light" ? "yellow" : "blue"}
+            >
+              Limpiar URLs
+            </Button>
+            <Button
+              onClick={handleClear}
+              mr={2}
+              colorScheme="red"
+              aria-label="Limpiar todo"
+              w="40px"
+              p="0"
+            >
+              <DeleteIcon />
+            </Button>
+            <CSVLink data={csvData} filename="extracted_data.csv">
+              <Button
+                colorScheme="green"
+                title="Descargar CSV"
+                aria-label="Descargar CSV"
+                w="40px"
+                p="0"
+              >
+                <DownloadIcon />
+              </Button>
+            </CSVLink>
+          </Box>
+          <Text color="gray.600" fontSize="sm">
+            <b>Enlaces ingresados:</b> {getLinkCount()}
+          </Text>
+        </Flex>
         {/* Mostrar la tabla con los datos extraídos */}
         <Box overflowX="auto" maxWidth="100%">
           <Table size="sm">
