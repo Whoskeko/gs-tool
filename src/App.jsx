@@ -19,7 +19,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { CSVLink } from "react-csv";
-import { MoonIcon, SunIcon, DeleteIcon, DownloadIcon } from "@chakra-ui/icons";
+import { MoonIcon, SunIcon, DeleteIcon, DownloadIcon, LockIcon } from "@chakra-ui/icons";
 import logo from "./assets/gst-logo.svg";
 
 const isValidURL = (url) => {
@@ -31,7 +31,8 @@ const isValidURL = (url) => {
 
 const fetchHTML = async (url) => {
   try {
-    const response = await fetch(url);
+    const corsAnywhereUrl = 'https://cors-anywhere.herokuapp.com/';
+    const response = await fetch(corsAnywhereUrl + url);
     if (!response.ok)
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     return await response.text();
@@ -221,16 +222,13 @@ const App = () => {
     localStorage.setItem("urls", urls);
   }, [urls]);
 
+  const handleCorsAccess = () => {
+    window.open('https://cors-anywhere.herokuapp.com/corsdemo', '_blank');
+  };
+
   return (
-    <ChakraProvider
-      theme={extendTheme({ config: { initialColorMode: "system" } })}
-    >
-      <Box
-        p={4}
-        bg={colorMode === "dark" ? "gray.900" : "white"}
-        color={colorMode === "dark" ? "white" : "black"}
-        minHeight="100vh"
-      >
+    <ChakraProvider theme={extendTheme({ config: { initialColorMode: "system" } })}>
+      <Box p={4} bg={colorMode === "dark" ? "gray.900" : "white"} color={colorMode === "dark" ? "white" : "black"} minHeight="100vh">
         <Flex justifyContent="space-between" alignItems="center" mb={4}>
           <Image
             src={logo}
@@ -268,13 +266,6 @@ const App = () => {
               Extraer Datos
             </Button>
             <Button
-              onClick={handleClearText}
-              mr={2}
-              colorScheme={colorMode === "light" ? "yellow" : "blue"}
-            >
-              Limpiar URLs
-            </Button>
-            <Button
               onClick={handleClear}
               mr={2}
               colorScheme="red"
@@ -291,10 +282,19 @@ const App = () => {
                 aria-label="Descargar CSV"
                 w="40px"
                 p="0"
+                mr={2}
               >
                 <DownloadIcon />
               </Button>
             </CSVLink>
+            <IconButton
+              icon={<LockIcon />}
+              colorScheme="purple"
+              aria-label="Solicitar acceso CORS"
+              onClick={handleCorsAccess}
+              w="40px"
+              p="0"
+            />
           </Box>
           <Text color="gray.600" fontSize="sm">
             <b>Enlaces ingresados:</b> {getLinkCount()}
