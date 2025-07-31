@@ -29,91 +29,6 @@ const isValidURL = (url) => {
   return regex.test(url);
 };
 
-const fetchHTML = async (url) => {
-  try {
-    const corsAnywhereUrl = 'https://cors-anywhere.herokuapp.com/';
-    const response = await fetch(corsAnywhereUrl + url);
-    if (!response.ok)
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    return await response.text();
-  } catch (error) {
-    console.error(`Error obteniendo HTML de ${url}:`, error);
-    return null;
-  }
-};
-
-const evaluateXPath = (xpath, html) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  const result = [];
-  const nodes = doc.evaluate(
-    xpath,
-    doc,
-    null,
-    XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-    null,
-  );
-  for (let i = 0; i < nodes.snapshotLength; i++) {
-    result.push(nodes.snapshotItem(i).textContent);
-  }
-  return result.join(", "); // Join multiple values with a comma
-};
-
-const extractMetaData = async (url) => {
-  const html = await fetchHTML(url);
-  if (!html) return null;
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  // Determinar el tipo de página con prioridad
-  let pageType = "N/A";
-  if (doc.querySelector('section.internal-products')) {
-    pageType = "PRO";
-  } else if (doc.querySelector('div.container.article-internal')) {
-    pageType = "ART";
-  } else if (doc.querySelector("article")) {
-    pageType = "COP";
-  }
-
-  const geoPlaceName =
-    doc.querySelector("meta[name='geo.placename']")?.content || "N/A";
-  const geoRegion =
-    doc.querySelector("meta[name='geo.region']")?.content || "N/A";
-
-  const speakableData = [];
-  doc.querySelectorAll("script[type='application/ld+json']").forEach((elem) => {
-    try {
-      const json = JSON.parse(elem.textContent);
-      if (json["@graph"]) {
-        json["@graph"].forEach((item) => {
-          if (item.speakable) {
-            const speakableItems = item.speakable.xpath || [];
-            speakableItems.forEach((xpath) => {
-              const value = evaluateXPath(xpath, html);
-              speakableData.push({
-                Type: item.speakable["@type"] || "Unknown Type",
-                XPath: xpath,
-                Value: value,
-              });
-            });
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing JSON-LD:", error);
-    }
-  });
-
-  return {
-    PageType: pageType,
-    URL: url,
-    GeoPlaceName: geoPlaceName,
-    GeoRegion: geoRegion,
-    Speakable: speakableData,
-  };
-};
-
 const App = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const [urls, setUrls] = useState("");
@@ -121,6 +36,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState([]);
+  const [useCorsAnywhere, setUseCorsAnywhere] = useState(true); // Nuevo estado
 
   const normalizeURL = (url) => {
     // Si la URL no contiene http:// o https://, agregamos https:// por defecto
@@ -139,7 +55,98 @@ const App = () => {
     return url;
   };
 
-  // Uso en el código
+  const fetchHTML = async (url) => {
+    try {
+      if (useCorsAnywhere) {
+        const corsAnywhereUrl = 'https://cors-anywhere.herokuapp.com/';
+        const response = await fetch(corsAnywhereUrl + url);
+        if (!response.ok)
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return await response.text();
+      } else {
+        const response = await fetch(url);
+        if (!response.ok)
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return await response.text();
+      }
+    } catch (error) {
+      console.error(`Error obteniendo HTML de ${url}:`, error);
+      return null;
+    }
+  };
+
+  const evaluateXPath = (xpath, html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const result = [];
+    const nodes = doc.evaluate(
+      xpath,
+      doc,
+      null,
+      XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+      null,
+    );
+    for (let i = 0; i < nodes.snapshotLength; i++) {
+      result.push(nodes.snapshotItem(i).textContent);
+    }
+    return result.join(", "); // Join multiple values with a comma
+  };
+
+  const extractMetaData = async (url) => {
+    const html = await fetchHTML(url);
+    if (!html) return null;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    // Determinar el tipo de página con prioridad
+    let pageType = "N/A";
+    if (doc.querySelector('section.internal-products')) {
+      pageType = "PRO";
+    } else if (doc.querySelector('div.container.article-internal')) {
+      pageType = "ART";
+    } else if (doc.querySelector("article")) {
+      pageType = "COP";
+    }
+
+    const geoPlaceName =
+      doc.querySelector("meta[name='geo.placename']")?.content || "N/A";
+    const geoRegion =
+      doc.querySelector("meta[name='geo.region']")?.content || "N/A";
+
+    const speakableData = [];
+    doc.querySelectorAll("script[type='application/ld+json']").forEach((elem) => {
+      try {
+        const json = JSON.parse(elem.textContent);
+        if (json["@graph"]) {
+          json["@graph"].forEach((item) => {
+            if (item.speakable) {
+              const speakableItems = item.speakable.xpath || [];
+              speakableItems.forEach((xpath) => {
+                const value = evaluateXPath(xpath, html);
+                speakableData.push({
+                  Type: item.speakable["@type"] || "Unknown Type",
+                  XPath: xpath,
+                  Value: value,
+                });
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing JSON-LD:", error);
+      }
+    });
+
+    return {
+      PageType: pageType,
+      URL: url,
+      GeoPlaceName: geoPlaceName,
+      GeoRegion: geoRegion,
+      Speakable: speakableData,
+    };
+  };
+
   const handleExtract = async () => {
     setIsLoading(true);
     setError(""); // Limpiar error previo
@@ -237,14 +244,26 @@ const App = () => {
             boxSize="100px"
             filter={colorMode === "dark" ? "invert(1)" : "none"}
           />
-          <IconButton
-            onClick={toggleColorMode}
-            icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
-            aria-label="Toggle Dark Mode"
-            borderRadius="full"
-            mr="5"
-            colorScheme={colorMode === "light" ? "yellow" : "blue"}
-          />
+          <Box>
+            <Button
+              onClick={() => setUseCorsAnywhere((v) => !v)}
+              colorScheme={useCorsAnywhere ? "purple" : "gray"}
+              size="sm"
+              mr={2}
+              borderRadius="full"
+              title="Cambiar modo de fetch"
+            >
+              {useCorsAnywhere ? "CORS Anywhere" : "Fetch Directo"}
+            </Button>
+            <IconButton
+              onClick={toggleColorMode}
+              icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
+              aria-label="Toggle Dark Mode"
+              borderRadius="full"
+              mr="5"
+              colorScheme={colorMode === "light" ? "yellow" : "blue"}
+            />
+          </Box>
         </Flex>
         {error && <Text color="red.500">{error}</Text>}{" "}
         {/* Mostramos el error si existe */}
