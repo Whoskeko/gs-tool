@@ -17,10 +17,13 @@ import {
   Image,
   Flex,
   Text,
+  Heading,
 } from "@chakra-ui/react";
 import { CSVLink } from "react-csv";
-import { MoonIcon, SunIcon, DeleteIcon, DownloadIcon, LockIcon } from "@chakra-ui/icons";
+import { MoonIcon, SunIcon, DeleteIcon, DownloadIcon, LockIcon, SmallCloseIcon, ViewIcon } from "@chakra-ui/icons";
 import logo from "./assets/gst-logo.svg";
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import Nutrition from './Nutrition'; // <-- Importa la nueva página
 
 const isValidURL = (url) => {
   // Expresión regular para validar si la URL es correcta
@@ -29,14 +32,34 @@ const isValidURL = (url) => {
   return regex.test(url);
 };
 
+// Componente Home
+function Home() {
+  const navigate = useNavigate();
+  return (
+    <Box textAlign="center" mt={4}>
+      <Button 
+        colorScheme="teal" 
+        onClick={() => navigate('/nutrition')}
+        position="absolute"
+        top="4"
+        right="4"
+      >
+        Ir a Nutrition
+      </Button>
+    </Box>
+  );
+}
+
 const App = () => {
   const { colorMode, toggleColorMode } = useColorMode();
+  const location = useLocation();
   const [urls, setUrls] = useState("");
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState([]);
   const [useCorsAnywhere, setUseCorsAnywhere] = useState(true); // Nuevo estado
+  const navigate = useNavigate(); // Agregar esto
 
   const normalizeURL = (url) => {
     // Si la URL no contiene http:// o https://, agregamos https:// por defecto
@@ -256,6 +279,14 @@ const App = () => {
               {useCorsAnywhere ? "CORS Anywhere" : "Fetch Directo"}
             </Button>
             <IconButton
+              onClick={() => navigate(location.pathname === "/" ? "/nutrition" : "/")}
+              icon={location.pathname === "/" ? <ViewIcon /> : <SmallCloseIcon />}
+              aria-label={location.pathname === "/" ? "Ir a Nutrition" : "Ir a Home"}
+              mr={2}
+              borderRadius="full"
+              colorScheme="teal"
+            />
+            <IconButton
               onClick={toggleColorMode}
               icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
               aria-label="Toggle Dark Mode"
@@ -265,95 +296,103 @@ const App = () => {
             />
           </Box>
         </Flex>
-        {error && <Text color="red.500">{error}</Text>}{" "}
-        {/* Mostramos el error si existe */}
-        <Textarea
-          placeholder="Ingrese URLs, una por línea"
-          value={urls}
-          onChange={(e) => setUrls(e.target.value)}
-          mb={4}
-          resize="vertical"
-        />
-        <Flex justifyContent="space-between" alignItems="center" mb={4}>
-          <Box>
-            <Button
-              onClick={handleExtract}
-              isLoading={isLoading}
-              mr={2}
-              colorScheme={colorMode === "light" ? "yellow" : "blue"}
-            >
-              Extraer Datos
-            </Button>
-            <Button
-              onClick={handleClear}
-              mr={2}
-              colorScheme="red"
-              aria-label="Limpiar todo"
-              w="40px"
-              p="0"
-            >
-              <DeleteIcon />
-            </Button>
-            <CSVLink data={csvData} filename="extracted_data.csv">
-              <Button
-                colorScheme="green"
-                title="Descargar CSV"
-                aria-label="Descargar CSV"
-                w="40px"
-                p="0"
-                mr={2}
-              >
-                <DownloadIcon />
-              </Button>
-            </CSVLink>
-            <IconButton
-              icon={<LockIcon />}
-              colorScheme="purple"
-              aria-label="Solicitar acceso CORS"
-              onClick={handleCorsAccess}
-              w="40px"
-              p="0"
-            />
-          </Box>
-          <Text color="gray.600" fontSize="sm">
-            <b>Enlaces ingresados:</b> {getLinkCount()}
-          </Text>
-        </Flex>
-        {/* Mostrar la tabla con los datos extraídos */}
-        <Box overflowX="auto" maxWidth="100%">
-          <Table size="sm">
-            <Thead>
-              <Tr>
-                <Th>Type</Th>
-                <Th>URL</Th>
-                <Th>GeoPlaceName</Th>
-                <Th>GeoRegion</Th>
-                <Th>Speakable</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {data.map((item, index) => (
-                <Tr key={index}>
-                  <Td>{item.PageType}</Td>
-                  <Td>{item.URL}</Td>
-                  <Td>{item.GeoPlaceName}</Td>
-                  <Td>{item.GeoRegion}</Td>
-                  <Td>
-                    {item.Speakable.length > 0
-                      ? item.Speakable.map((s, i) => (
-                          <Box key={i} mb={2}>
-                            <b>Type:</b> {s.Type} <br />
-                            <b>XPath:</b> {s.XPath} <br />
-                            <b>Value:</b> {s.Value}
-                          </Box>
-                        ))
-                      : "No Speakable Data"}
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Box>
+        
+        <Routes>
+          <Route path="/" element={
+            <>
+              {/* Todo el contenido existente de la página principal */}
+              {error && <Text color="red.500">{error}</Text>}
+              <Textarea
+                placeholder="Ingrese URLs, una por línea"
+                value={urls}
+                onChange={(e) => setUrls(e.target.value)}
+                mb={4}
+                resize="vertical"
+              />
+              <Flex justifyContent="space-between" alignItems="center" mb={4}>
+                <Box>
+                  <Button
+                    onClick={handleExtract}
+                    isLoading={isLoading}
+                    mr={2}
+                    colorScheme={colorMode === "light" ? "yellow" : "blue"}
+                  >
+                    Extraer Datos
+                  </Button>
+                  <Button
+                    onClick={handleClear}
+                    mr={2}
+                    colorScheme="red"
+                    aria-label="Limpiar todo"
+                    w="40px"
+                    p="0"
+                  >
+                    <DeleteIcon />
+                  </Button>
+                  <CSVLink data={csvData} filename="extracted_data.csv">
+                    <Button
+                      colorScheme="green"
+                      title="Descargar CSV"
+                      aria-label="Descargar CSV"
+                      w="40px"
+                      p="0"
+                      mr={2}
+                    >
+                      <DownloadIcon />
+                    </Button>
+                  </CSVLink>
+                  <IconButton
+                    icon={<LockIcon />}
+                    colorScheme="purple"
+                    aria-label="Solicitar acceso CORS"
+                    onClick={handleCorsAccess}
+                    w="40px"
+                    p="0"
+                  />
+                </Box>
+                <Text color="gray.600" fontSize="sm">
+                  <b>Enlaces ingresados:</b> {getLinkCount()}
+                </Text>
+              </Flex>
+              {/* Mostrar la tabla con los datos extraídos */}
+              <Box overflowX="auto" maxWidth="100%">
+                <Table size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th>Type</Th>
+                      <Th>URL</Th>
+                      <Th>GeoPlaceName</Th>
+                      <Th>GeoRegion</Th>
+                      <Th>Speakable</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {data.map((item, index) => (
+                      <Tr key={index}>
+                        <Td>{item.PageType}</Td>
+                        <Td>{item.URL}</Td>
+                        <Td>{item.GeoPlaceName}</Td>
+                        <Td>{item.GeoRegion}</Td>
+                        <Td>
+                          {item.Speakable.length > 0
+                            ? item.Speakable.map((s, i) => (
+                                <Box key={i} mb={2}>
+                                  <b>Type:</b> {s.Type} <br />
+                                  <b>XPath:</b> {s.XPath} <br />
+                                  <b>Value:</b> {s.Value}
+                                </Box>
+                              ))
+                            : "No Speakable Data"}
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </Box>
+            </>
+          } />
+          <Route path="/nutrition" element={<Nutrition colorMode={colorMode} />} />
+        </Routes>
       </Box>
     </ChakraProvider>
   );
